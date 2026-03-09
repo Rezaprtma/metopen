@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mind Map — Deteksi Perilaku Agresif Betta splendens</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0f1e;
+    --center-bg: #1a3a5c;
+    --center-glow: #2176ff;
+    --j1: #e63946; --j1l: #ff6b74;
+    --j2: #2a9d8f; --j2l: #52c4b7;
+    --j3: #e9c46a; --j3l: #f4d785;
+    --j4: #8338ec; --j4l: #a66ff5;
+    --j5: #fb8500; --j5l: #ffa63d;
+    --j6: #06d6a0; --j6l: #3aebb8;
+    --text: #e8edf5;
+    --text-dim: #8a9ab5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    text-align: center;
+    padding: 36px 20px 10px;
+    position: relative;
+    z-index: 10;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(18px, 3vw, 28px);
+    color: var(--text);
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+  }
+  .header p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── SVG CANVAS ── */
+  .canvas-wrap {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+  }
+
+  svg#mindmap {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  /* ── CENTER NODE ── */
+  .center-node {
+    filter: drop-shadow(0 0 32px rgba(33, 118, 255, 0.5));
+  }
+
+  /* ── JOURNAL CARDS ── */
+  .journal-card {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  .journal-card:hover .card-bg {
+    opacity: 1;
+  }
+  .journal-card:hover {
+    filter: brightness(1.15);
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 20px 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 8px 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .legend-item:hover { background: rgba(255,255,255,0.1); }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-text {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  /* ── DETAIL PANEL ── */
+  .detail-panel {
+    position: fixed;
+    right: -480px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #111827;
+    border-left: 3px solid var(--center-glow);
+    border-radius: 16px 0 0 16px;
+    padding: 28px 24px;
+    transition: right 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 100;
+    box-shadow: -8px 0 40px rgba(0,0,0,0.6);
+  }
+  .detail-panel.open { right: 0; }
+  .detail-panel .close-btn {
+    position: absolute;
+    top: 14px; right: 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: var(--text);
+    font-size: 18px;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .detail-panel .close-btn:hover { background: rgba(255,255,255,0.2); }
+  .detail-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--text);
+    line-height: 1.4;
+    margin-bottom: 14px;
+    padding-right: 36px;
+  }
+  .detail-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .detail-badge {
+    display: inline-block;
+    background: rgba(6, 214, 160, 0.15);
+    color: #06d6a0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(6, 214, 160, 0.3);
+    margin-bottom: 14px;
+  }
+  .detail-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  .detail-text {
+    font-size: 13px;
+    color: #c5cfe0;
+    line-height: 1.7;
+  }
+  .detail-link {
+    display: block;
+    margin-top: 18px;
+    background: rgba(33, 118, 255, 0.15);
+    border: 1px solid rgba(33, 118, 255, 0.35);
+    color: #5ba4ff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    text-align: center;
+    transition: background 0.2s;
+    word-break: break-all;
+  }
+  .detail-link:hover { background: rgba(33, 118, 255, 0.3); }
+
+  /* ── BG DECORATION ── */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .bg-orb {
+    position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0;
+  }
+  .orb1 { width: 500px; height: 500px; background: rgba(33,118,255,0.07); top: -100px; left: -100px; }
+  .orb2 { width: 400px; height: 400px; background: rgba(230,57,70,0.06); bottom: -80px; right: -80px; }
+  .orb3 { width: 300px; height: 300px; background: rgba(42,157,143,0.06); top: 40%; left: 40%; }
+
+  body > *:not(.bg-grid):not(.bg-orb) { position: relative; z-index: 1; }
+
+  /* scrollbar */
+  .detail-panel::-webkit-scrollbar { width: 4px; }
+  .detail-panel::-webkit-scrollbar-track { background: transparent; }
+  .detail-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+<div class="bg-orb orb3"></div>
+
+<div class="header">
+  <h1>Mind Map Penelitian — Deteksi Perilaku Agresif<br><em>Betta splendens</em> via Computer Vision</h1>
+  <p>Klik setiap jurnal untuk melihat detail lengkap &amp; link open access</p>
+</div>
+
+<div class="canvas-wrap">
+<svg id="mindmap" viewBox="0 0 1000 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- glows -->
+    <filter id="glow-center" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-node" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.5)"/>
+    </filter>
+
+    <!-- gradients center -->
+    <radialGradient id="grad-center" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#2176ff"/>
+      <stop offset="100%" stop-color="#0a2a5e"/>
+    </radialGradient>
+
+    <!-- journal gradients -->
+    <linearGradient id="grad-j1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e63946"/><stop offset="100%" stop-color="#9b1a24"/>
+    </linearGradient>
+    <linearGradient id="grad-j2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a9d8f"/><stop offset="100%" stop-color="#16635b"/>
+    </linearGradient>
+    <linearGradient id="grad-j3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e9c46a"/><stop offset="100%" stop-color="#b8852d"/>
+    </linearGradient>
+    <linearGradient id="grad-j4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8338ec"/><stop offset="100%" stop-color="#4a1a8c"/>
+    </linearGradient>
+    <linearGradient id="grad-j5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb8500"/><stop offset="100%" stop-color="#a85600"/>
+    </linearGradient>
+    <linearGradient id="grad-j6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06d6a0"/><stop offset="100%" stop-color="#038a67"/>
+    </linearGradient>
+
+    <!-- connector dots -->
+    <marker id="dot-j1" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#e63946"/>
+    </marker>
+    <marker id="dot-j2" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#2a9d8f"/>
+    </marker>
+    <marker id="dot-j3" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#e9c46a"/>
+    </marker>
+    <marker id="dot-j4" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#8338ec"/>
+    </marker>
+    <marker id="dot-j5" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#fb8500"/>
+    </marker>
+    <marker id="dot-j6" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6">
+      <circle cx="5" cy="5" r="4" fill="#06d6a0"/>
+    </marker>
+  </defs>
+
+  <!-- ═══ CONNECTOR LINES ═══ -->
+  <!-- J1 top-left -->
+  <path d="M 460 400 Q 340 310 210 230" stroke="#e63946" stroke-width="2.5" fill="none" stroke-dasharray="6 3" opacity="0.7" marker-end="url(#dot-j1)"/>
+  <!-- J2 top -->
+  <path d="M 490 380 Q 490 270 490 155" stroke="#2a9d8f" stroke-width="2.5" fill="none" stroke-dasharray="6 3" opacity="0.7" marker-end="url(#dot-j2)"/>
+  <!-- J3 top-right -->
+  <path d="M 540 400 Q 660 310 790 230" stroke="#e9c46a" stroke-width="2.5" fill="none" stroke-dasharray="6 3" opacity="0.7" marker-end="url(#dot-j3)"/>
+  <!-- J4 bottom-left -->
+  <path d="M 460 470 Q 340 560 210 650" stroke="#8338ec" stroke-width="2.5" fill="none" stroke-dasharray="6 3" opacity="0.7" marker-end="url(#dot-j4)"/>
+  <!-- J5 bottom -->
+  <path d="M 490 490 Q 490 610 490 720" stroke="#fb8500" stroke-width="2.5" fill="none" stroke-dasharray="6 3" opacity="0.7" marker-end="url(#dot-j5)"/>
+  <!-- J6 bottom-right -->
+  <path d="M 540 470 Q 660 560 790 650" stroke="#06d6a0" stroke-width="2.5" fill="none" stroke-dasharray="6 3" opacity="0.7" marker-end="url(#dot-j6)"/>
+
+  <!-- ═══ CENTER NODE ═══ -->
+  <g class="center-node" filter="url(#glow-center)">
+    <!-- outer ring -->
+    <circle cx="500" cy="435" r="95" fill="none" stroke="#2176ff" stroke-width="1.5" opacity="0.4"/>
+    <circle cx="500" cy="435" r="83" fill="none" stroke="#2176ff" stroke-width="0.8" opacity="0.25"/>
+    <!-- main circle -->
+    <circle cx="500" cy="435" r="75" fill="url(#grad-center)" filter="url(#shadow)"/>
+    <!-- fish emoji area -->
+    <text x="500" y="412" text-anchor="middle" font-size="28" font-family="Segoe UI Emoji, Apple Color Emoji, sans-serif">🐟</text>
+    <!-- title lines -->
+    <text x="500" y="435" text-anchor="middle" font-family="Playfair Display, serif" font-size="10.5" font-weight="700" fill="white" letter-spacing="0.3">DETEKSI PERILAKU</text>
+    <text x="500" y="448" text-anchor="middle" font-family="Playfair Display, serif" font-size="10.5" font-weight="700" fill="white" letter-spacing="0.3">AGRESIF</text>
+    <text x="500" y="462" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="500" fill="#a8c4ff" font-style="italic">Betta splendens</text>
+    <text x="500" y="476" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" fill="#7ba3e8" letter-spacing="0.2">Computer Vision + Deep Learning</text>
+  </g>
+
+  <!-- ═══ JOURNAL 1 — Top-Left ═══ -->
+  <g class="journal-card" onclick="showDetail(0)" filter="url(#glow-node)">
+    <rect x="60" y="120" width="230" height="145" rx="14" fill="url(#grad-j1)" class="card-bg" filter="url(#shadow)"/>
+    <rect x="60" y="120" width="230" height="145" rx="14" fill="none" stroke="#ff6b74" stroke-width="1.2" opacity="0.6"/>
+    <!-- number badge -->
+    <circle cx="82" cy="142" r="13" fill="rgba(0,0,0,0.35)"/>
+    <text x="82" y="147" text-anchor="middle" font-family="Playfair Display, serif" font-size="13" font-weight="900" fill="white">1</text>
+    <text x="102" y="143" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="700" fill="rgba(255,255,255,0.7)" letter-spacing="0.15">ZHAO, 2023</text>
+    <text x="75" y="163" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">Abnormal Fish Behavior</text>
+    <text x="75" y="176" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">Detection — Deep Learning</text>
+    <!-- divider -->
+    <line x1="75" y1="183" x2="275" y2="183" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+    <text x="75" y="197" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)" font-weight="400">• YOLOv8 + Deep Sort algoritma</text>
+    <text x="75" y="210" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Deteksi perilaku abnormal ikan</text>
+    <text x="75" y="223" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Real-time monitoring akuarium</text>
+    <text x="75" y="236" font-family="DM Sans, sans-serif" font-size="7.5" fill="rgba(255,255,255,0.55)" font-style="italic">Frontiers in Computing &amp; IS</text>
+    <rect x="60" y="120" width="230" height="145" rx="14" fill="rgba(255,255,255,0)" class="hover-overlay"/>
+  </g>
+
+  <!-- ═══ JOURNAL 2 — Top-Center ═══ -->
+  <g class="journal-card" onclick="showDetail(1)" filter="url(#glow-node)">
+    <rect x="380" y="30" width="230" height="145" rx="14" fill="url(#grad-j2)" filter="url(#shadow)"/>
+    <rect x="380" y="30" width="230" height="145" rx="14" fill="none" stroke="#52c4b7" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="402" cy="52" r="13" fill="rgba(0,0,0,0.35)"/>
+    <text x="402" y="57" text-anchor="middle" font-family="Playfair Display, serif" font-size="13" font-weight="900" fill="white">2</text>
+    <text x="422" y="53" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="700" fill="rgba(255,255,255,0.7)" letter-spacing="0.15">PATTANA-ANAKE, 2021</text>
+    <text x="395" y="73" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">BettaNet: Deep Learning</text>
+    <text x="395" y="86" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">for Betta Classification</text>
+    <line x1="395" y1="93" x2="595" y2="93" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+    <text x="395" y="107" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Arsitektur CNN khusus Betta</text>
+    <text x="395" y="120" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Modifikasi ResNet-152</text>
+    <text x="395" y="133" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• 6 spesies Betta liar terklasifikasi</text>
+    <text x="395" y="146" font-family="DM Sans, sans-serif" font-size="7.5" fill="rgba(255,255,255,0.55)" font-style="italic">IOP Conf. Series: MSE</text>
+  </g>
+
+  <!-- ═══ JOURNAL 3 — Top-Right ═══ -->
+  <g class="journal-card" onclick="showDetail(2)" filter="url(#glow-node)">
+    <rect x="700" y="120" width="230" height="145" rx="14" fill="url(#grad-j3)" filter="url(#shadow)"/>
+    <rect x="700" y="120" width="230" height="145" rx="14" fill="none" stroke="#f4d785" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="722" cy="142" r="13" fill="rgba(0,0,0,0.35)"/>
+    <text x="722" y="147" text-anchor="middle" font-family="Playfair Display, serif" font-size="13" font-weight="900" fill="white">3</text>
+    <text x="742" y="143" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="700" fill="rgba(0,0,0,0.5)" letter-spacing="0.15">McGORAN, 2020</text>
+    <text x="715" y="163" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="#1a1a1a">Determinants of Aggression</text>
+    <text x="715" y="176" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="#1a1a1a">in Betta splendens</text>
+    <line x1="715" y1="183" x2="915" y2="183" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+    <text x="715" y="197" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(0,0,0,0.75)">• Faktor: ukuran, warna, boldness</text>
+    <text x="715" y="210" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(0,0,0,0.75)">• Flaring &amp; lateral display diukur</text>
+    <text x="715" y="223" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(0,0,0,0.75)">• Biru lebih agresif dari merah</text>
+    <text x="715" y="236" font-family="DM Sans, sans-serif" font-size="7.5" fill="rgba(0,0,0,0.45)" font-style="italic">bioRxiv Preprint — Open Access</text>
+  </g>
+
+  <!-- ═══ JOURNAL 4 — Bottom-Left ═══ -->
+  <g class="journal-card" onclick="showDetail(3)" filter="url(#glow-node)">
+    <rect x="60" y="600" width="230" height="145" rx="14" fill="url(#grad-j4)" filter="url(#shadow)"/>
+    <rect x="60" y="600" width="230" height="145" rx="14" fill="none" stroke="#a66ff5" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="82" cy="622" r="13" fill="rgba(0,0,0,0.35)"/>
+    <text x="82" y="627" text-anchor="middle" font-family="Playfair Display, serif" font-size="13" font-weight="900" fill="white">4</text>
+    <text x="102" y="623" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="700" fill="rgba(255,255,255,0.7)" letter-spacing="0.15">YANG ET AL., 2021</text>
+    <text x="75" y="643" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">CV Models in Intelligent</text>
+    <text x="75" y="656" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">Aquaculture — Review</text>
+    <line x1="75" y1="663" x2="275" y2="663" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+    <text x="75" y="677" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• CNN, YOLO, U-Net dibahas</text>
+    <text x="75" y="690" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Deteksi spesies &amp; perilaku ikan</text>
+    <text x="75" y="703" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Tantangan: oklusi, cahaya, BG</text>
+    <text x="75" y="716" font-family="DM Sans, sans-serif" font-size="7.5" fill="rgba(255,255,255,0.55)" font-style="italic">Archives of Computational Methods</text>
+  </g>
+
+  <!-- ═══ JOURNAL 5 — Bottom-Center ═══ -->
+  <g class="journal-card" onclick="showDetail(4)" filter="url(#glow-node)">
+    <rect x="380" y="730" width="230" height="145" rx="14" fill="url(#grad-j5)" filter="url(#shadow)"/>
+    <rect x="380" y="730" width="230" height="145" rx="14" fill="none" stroke="#ffa63d" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="402" cy="752" r="13" fill="rgba(0,0,0,0.35)"/>
+    <text x="402" y="757" text-anchor="middle" font-family="Playfair Display, serif" font-size="13" font-weight="900" fill="white">5</text>
+    <text x="422" y="753" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="700" fill="rgba(255,255,255,0.7)" letter-spacing="0.15">MULTIPLE AUTHORS, 2024</text>
+    <text x="395" y="773" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">Coordination &amp; Persistence</text>
+    <text x="395" y="786" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="white">of Aggressive Visual Comm.</text>
+    <line x1="395" y1="793" x2="595" y2="793" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+    <text x="395" y="807" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Keypoint tracking cupang video</text>
+    <text x="395" y="820" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Contour tracking flaring otomatis</text>
+    <text x="395" y="833" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(255,255,255,0.85)">• Mirror test dikuantifikasi CV</text>
+    <text x="395" y="846" font-family="DM Sans, sans-serif" font-size="7.5" fill="rgba(255,255,255,0.55)" font-style="italic">bioRxiv 2024 — Open Access</text>
+  </g>
+
+  <!-- ═══ JOURNAL 6 — Bottom-Right ═══ -->
+  <g class="journal-card" onclick="showDetail(5)" filter="url(#glow-node)">
+    <rect x="700" y="600" width="230" height="145" rx="14" fill="url(#grad-j6)" filter="url(#shadow)"/>
+    <rect x="700" y="600" width="230" height="145" rx="14" fill="none" stroke="#3aebb8" stroke-width="1.2" opacity="0.6"/>
+    <circle cx="722" cy="622" r="13" fill="rgba(0,0,0,0.35)"/>
+    <text x="722" y="627" text-anchor="middle" font-family="Playfair Display, serif" font-size="13" font-weight="900" fill="white">6</text>
+    <text x="742" y="623" font-family="DM Sans, sans-serif" font-size="8.5" font-weight="700" fill="rgba(0,0,0,0.45)" letter-spacing="0.15">MULTIPLE AUTHORS, 2024</text>
+    <text x="715" y="643" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="#0a2a1f">Fish Tracking, Counting</text>
+    <text x="715" y="656" font-family="Playfair Display, serif" font-size="9.5" font-weight="700" fill="#0a2a1f">&amp; Behaviour Analysis</text>
+    <line x1="715" y1="663" x2="915" y2="663" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+    <text x="715" y="677" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(0,0,0,0.75)">• Survey komprehensif CV ikan</text>
+    <text x="715" y="690" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(0,0,0,0.75)">• FBC: Fish Behavior Classification</text>
+    <text x="715" y="703" font-family="DM Sans, sans-serif" font-size="8" fill="rgba(0,0,0,0.75)">• Agresi, stres, parasit terdeteksi</text>
+    <text x="715" y="716" font-family="DM Sans, sans-serif" font-size="7.5" fill="rgba(0,0,0,0.45)" font-style="italic">arXiv 2024 — Open Access</text>
+  </g>
+
+  <!-- ═══ OPEN ACCESS badges ═══ -->
+  <g opacity="0.85">
+    <rect x="60" y="252" width="76" height="16" rx="8" fill="rgba(6,214,160,0.2)" stroke="#06d6a0" stroke-width="0.8"/>
+    <text x="98" y="263" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" font-weight="700" fill="#06d6a0">✓ OPEN ACCESS</text>
+
+    <rect x="380" y="162" width="76" height="16" rx="8" fill="rgba(6,214,160,0.2)" stroke="#06d6a0" stroke-width="0.8"/>
+    <text x="418" y="173" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" font-weight="700" fill="#06d6a0">✓ OPEN ACCESS</text>
+
+    <rect x="700" y="252" width="76" height="16" rx="8" fill="rgba(6,214,160,0.2)" stroke="#06d6a0" stroke-width="0.8"/>
+    <text x="738" y="263" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" font-weight="700" fill="#06d6a0">✓ OPEN ACCESS</text>
+
+    <rect x="60" y="732" width="76" height="16" rx="8" fill="rgba(6,214,160,0.2)" stroke="#06d6a0" stroke-width="0.8"/>
+    <text x="98" y="743" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" font-weight="700" fill="#06d6a0">✓ OPEN ACCESS</text>
+
+    <rect x="380" y="862" width="76" height="16" rx="8" fill="rgba(6,214,160,0.2)" stroke="#06d6a0" stroke-width="0.8"/>
+    <text x="418" y="873" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" font-weight="700" fill="#06d6a0">✓ OPEN ACCESS</text>
+
+    <rect x="700" y="732" width="76" height="16" rx="8" fill="rgba(6,214,160,0.2)" stroke="#06d6a0" stroke-width="0.8"/>
+    <text x="738" y="743" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7.5" font-weight="700" fill="#06d6a0">✓ OPEN ACCESS</text>
+  </g>
+
+</svg>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item" onclick="showDetail(0)">
+    <div class="legend-dot" style="background:#e63946"></div>
+    <div class="legend-text">J1 — Zhao 2023<br>Abnormal Fish Behavior</div>
+  </div>
+  <div class="legend-item" onclick="showDetail(1)">
+    <div class="legend-dot" style="background:#2a9d8f"></div>
+    <div class="legend-text">J2 — BettaNet 2021<br>CNN Klasifikasi Betta</div>
+  </div>
+  <div class="legend-item" onclick="showDetail(2)">
+    <div class="legend-dot" style="background:#e9c46a"></div>
+    <div class="legend-text">J3 — McGoran 2020<br>Determinants Agresivitas</div>
+  </div>
+  <div class="legend-item" onclick="showDetail(3)">
+    <div class="legend-dot" style="background:#8338ec"></div>
+    <div class="legend-text">J4 — Yang 2021<br>CV in Aquaculture Review</div>
+  </div>
+  <div class="legend-item" onclick="showDetail(4)">
+    <div class="legend-dot" style="background:#fb8500"></div>
+    <div class="legend-text">J5 — Betta Coordination 2024<br>Keypoint Tracking Flaring</div>
+  </div>
+  <div class="legend-item" onclick="showDetail(5)">
+    <div class="legend-dot" style="background:#06d6a0"></div>
+    <div class="legend-text">J6 — Fish Behaviour 2024<br>Survey CV Perilaku Ikan</div>
+  </div>
+</div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <button class="close-btn" onclick="closeDetail()">✕</button>
+  <div id="detailContent"></div>
+</div>
+
+<script>
+const journals = [
+  {
+    no: 1,
+    color: "#e63946",
+    title: "Abnormal Behavior Fish and Population Detection Method based on Deep Learning",
+    author: "Zhao, Z.",
+    year: "2023",
+    journal: "Frontiers in Computing and Intelligent Systems, Vol. 4 No. 3, pp. 44–48",
+    platform: "DRPress — Open Access",
+    url: "https://drpress.org/ojs/index.php/fcis/article/view/11018",
+    ringkasan: "Mengembangkan model deteksi ikan berperilaku abnormal menggunakan YOLOv8 dan algoritma Deep Sort. Sistem memantau dan menganalisis perilaku ikan secara real-time. Hasilnya menunjukkan model mampu mendeteksi perilaku tidak normal dengan akurasi tinggi, memberikan dasar metodologis penting untuk deteksi perilaku agresif cupang.",
+    relevansi: "Metodologi YOLOv8 + Deep Sort sangat relevan untuk diterapkan pada deteksi gerakan agresif cupang secara real-time di akuarium.",
+    poin: ["YOLOv8 untuk deteksi objek ikan", "Deep Sort untuk tracking multi-ikan", "Dataset: ikan air tawar kolam budidaya", "Akurasi deteksi abnormal >88%"],
+  },
+  {
+    no: 2,
+    color: "#2a9d8f",
+    title: "BettaNet: A Deep Learning Architecture for Classification of Wild Siamese Betta Species",
+    author: "Pattana-anake, V., Danphitsanuparn, P., & John Joseph, F.J.",
+    year: "2021",
+    journal: "IOP Conf. Series: Materials Science and Engineering, Vol. 1055, 012104",
+    platform: "ResearchGate — Open Access",
+    url: "https://www.researchgate.net/publication/349163740_BettaNet_A_Deep_Learning_Architecture_for_Classification_of_Wild_Siamese_Betta_Species",
+    ringkasan: "Mengembangkan arsitektur BettaNet yang merupakan modifikasi ResNet-152 untuk mengklasifikasikan 6 spesies liar Betta. Dataset dikumpulkan di lingkungan tidak terkontrol dengan variasi pencahayaan tinggi. BettaNet unggul dalam akurasi dan F1-score dibandingkan arsitektur standar.",
+    relevansi: "Membuktikan bahwa deep learning dapat dioptimalkan secara spesifik untuk ikan Betta — menjadi fondasi arsitektur model untuk mendeteksi perilaku agresif.",
+    poin: ["Modifikasi ResNet-152 → BettaNet", "6 spesies Betta liar terklasifikasi", "Dataset: foto di habitat alami (non-lab)", "F1-score lebih tinggi dari VGG16 & MobileNet"],
+  },
+  {
+    no: 3,
+    color: "#b8852d",
+    title: "The Determinants of Aggression in Male Siamese Fighting Fish, Betta splendens",
+    author: "McGoran, R.E., Papworth, S.K., & Portugal, S.J.",
+    year: "2020",
+    journal: "bioRxiv Preprint. doi: 10.1101/2020.04.16.045179",
+    platform: "bioRxiv — Open Access (Free)",
+    url: "https://www.biorxiv.org/content/10.1101/2020.04.16.045179v1.full",
+    ringkasan: "Meneliti faktor-faktor penentu agresivitas cupang jantan: ukuran tubuh, warna sirip, dan kepribadian (boldness). Ditemukan bahwa cupang bersirip biru lebih agresif dari merah/hijau. Opercular flaring dan lateral display adalah dua perilaku agresif paling dominan dan terukur secara visual dari rekaman video.",
+    relevansi: "Memberikan dasar biologi perilaku yang kuat — mendefinisikan secara tepat perilaku apa saja yang harus dideteksi CV dan parameter kuantitatif yang harus diukur.",
+    poin: ["Flaring = indikator agresivitas #1", "Lateral display diukur durasinya", "Warna sirip memengaruhi tingkat agresi", "Mirror test = metode standar valid"],
+  },
+  {
+    no: 4,
+    color: "#8338ec",
+    title: "Computer Vision Models in Intelligent Aquaculture with Emphasis on Fish Detection and Behavior Analysis: A Review",
+    author: "Yang, L., Liu, Y., Yu, H., et al.",
+    year: "2021",
+    journal: "Archives of Computational Methods in Engineering, Vol. 28, pp. 2785–2816. Springer.",
+    platform: "ResearchGate — Open Access PDF",
+    url: "https://www.researchgate.net/publication/344157049",
+    ringkasan: "Tinjauan komprehensif model CV untuk akuakultur pintar — mencakup deteksi spesies, penghitungan populasi, estimasi ukuran, dan analisis perilaku ikan. Mengidentifikasi tantangan utama: variasi pencahayaan, oklusi, deformasi tubuh ikan, dan background dinamis. CNN, YOLO, dan U-Net dibahas sebagai solusi terdepan.",
+    relevansi: "Menyediakan roadmap teknis lengkap untuk membangun sistem CV deteksi ikan — termasuk solusi untuk tantangan yang dihadapi dalam memantau cupang di akuarium.",
+    poin: ["Review >100 paper CV akuakultur", "Framework deteksi + tracking + analisis perilaku", "Tantangan: oklusi, cahaya, background", "Solusi: augmentasi data + transfer learning"],
+  },
+  {
+    no: 5,
+    color: "#fb8500",
+    title: "Coordination and Persistence of Aggressive Visual Communication in Siamese Fighting Fish",
+    author: "Multiple Authors",
+    year: "2024",
+    journal: "bioRxiv Preprint. doi: 10.1101/2024.04.29.591330",
+    platform: "bioRxiv — Open Access (Free)",
+    url: "https://www.biorxiv.org/content/10.1101/2024.04.29.591330v1.full",
+    ringkasan: "Meneliti perilaku 'turn-taking' agresif pada cupang menggunakan video + keypoint tracking. Titik kunci tubuh (merah) dan kontur tubuh (hijau) dilacak untuk mengkuantifikasi perilaku flaring, lateral display, dan tail beating secara otomatis dari rekaman video cupang.",
+    relevansi: "LANGSUNG membuktikan bahwa keypoint tracking + body contour analysis bisa mengukur perilaku agresif cupang secara kuantitatif — ini adalah blueprint teknis utama untuk penelitian ini!",
+    poin: ["Keypoint tracking 🔴 titik tubuh cupang", "Contour tracking 🟢 batas sirip flaring", "Turn-taking agresif dikuantifikasi", "Paling relevan secara teknis untuk penelitian ini"],
+  },
+  {
+    no: 6,
+    color: "#06d6a0",
+    title: "Fish Tracking, Counting, and Behaviour Analysis in Digital Aquaculture: A Comprehensive Survey",
+    author: "Multiple Authors",
+    year: "2024",
+    journal: "arXiv Preprint. arXiv:2406.17800",
+    platform: "arXiv — Open Access (Free)",
+    url: "https://arxiv.org/html/2406.17800v2",
+    ringkasan: "Survey komprehensif teknik tracking, penghitungan, dan analisis perilaku ikan di akuakultur digital. Membahas perilaku abnormal termasuk agresi, stres, penyakit, parasit, dan kanibalisme, serta tantangan deteksinya menggunakan deep learning dan computer vision terkini.",
+    relevansi: "Menyediakan framework Fish Behavior Classification (FBC) yang dapat langsung diadaptasi untuk sistem skoring agresivitas cupang dalam penelitian ini.",
+    poin: ["FBC: Fish Behavior Classification", "Agresi & kanibalisme masuk kategori abnormal", "Deteksi perilaku menggunakan LSTM + CNN", "Survey >150 paper terbaru 2020–2024"],
+  },
+];
+
+function showDetail(idx) {
+  const j = journals[idx];
+  const panel = document.getElementById('detailPanel');
+  const content = document.getElementById('detailContent');
+
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:40px;height:40px;border-radius:50%;background:${j.color};display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:white;flex-shrink:0;">${j.no}</div>
+      <div>
+        <div style="font-size:11px;color:#8a9ab5;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">${j.author} · ${j.year}</div>
+        <div style="font-size:11px;color:#8a9ab5;">${j.platform}</div>
+      </div>
+    </div>
+    <div class="detail-title" style="border-left:3px solid ${j.color};padding-left:12px;">${j.title}</div>
+    <div class="detail-badge">✅ OPEN ACCESS — Gratis Diunduh</div>
+    <div style="font-size:11px;color:#8a9ab5;font-style:italic;margin-bottom:14px;">${j.journal}</div>
+
+    <div class="detail-section-title">📋 Ringkasan</div>
+    <div class="detail-text">${j.ringkasan}</div>
+
+    <div class="detail-section-title">🔗 Relevansi dengan Penelitian</div>
+    <div class="detail-text" style="color:#ffd580;">${j.relevansi}</div>
+
+    <div class="detail-section-title">📌 Poin Kunci</div>
+    ${j.poin.map(p => `<div style="font-size:13px;color:#c5cfe0;line-height:1.7;padding:2px 0;padding-left:12px;border-left:2px solid ${j.color}33;margin-bottom:4px;">${p}</div>`).join('')}
+
+    <a href="${j.url}" target="_blank" class="detail-link">🔗 Buka Jurnal — ${j.url.replace('https://','').split('/')[0]}</a>
+  `;
+  panel.style.borderLeftColor = j.color;
+  panel.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// close on outside click
+document.addEventListener('click', (e) => {
+  const panel = document.getElementById('detailPanel');
+  if (!panel.contains(e.target) && !e.target.closest('.journal-card') && !e.target.closest('.legend-item')) {
+    panel.classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
